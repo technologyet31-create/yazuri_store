@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Optional: set this to your deployed backend (or set BACKEND_URL env on Netlify) -->
+    <meta name="backend-url" content="https://your-backend.example.com">
+    <title>فيينا ستور - واجهة الموظف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <h1 class="text-2xl font-bold text-blue-600">👨‍💼 فيينا ستور - واجهة الموظف</h1>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <p class="text-gray-600">مرحباً بك أيها الموظف</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Employee Panel -->
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-blue-600">📋 الطلبات الواردة</h2>
+                <p class="text-gray-500 mt-2">إدارة ومتابعة طلبات العملاء</p>
+            </div>
+            
+            <!-- Search / Filter for deliverables (split fields) -->
+            <div class="mb-6 grid sm:grid-cols-4 gap-4 items-center">
+                <div>
+                    <input id="searchName" type="search" autocomplete="off" placeholder="ابحث بالاسم" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                    <input id="searchPhone" type="search" autocomplete="off" placeholder="ابحث بالهاتف" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                    <input id="searchDeliverableId" type="search" autocomplete="off" placeholder="ابحث برقم التوصيلة" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div class="flex items-center space-x-2 space-x-reverse">
+                    <label for="statusFilter" class="text-sm text-gray-600">حالة الطلب:</label>
+                    <select id="statusFilter" class="border rounded-lg px-3 py-2 bg-white shadow-sm">
+                        <option value="all">الكل</option>
+                        <option value="قيد التحضير">قيد التحضير</option>
+                        <option value="تم التوصيل">تم التوصيل</option>
+                        <option value="جديد">جديد</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="ordersGrid" class="space-y-6">
+                <!-- Orders will be displayed here -->
+            </div>
+
+            <div id="noOrders" class="text-center py-16" style="display: none;">
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-2xl font-bold text-gray-600 mb-2">لا توجد طلبات حالياً</h3>
+                <p class="text-gray-500">ستظهر الطلبات الجديدة هنا</p>
+            </div>
+
+            <div id="noMatches" class="text-center py-16 hidden">
+                <div class="text-6xl mb-4">🔍</div>
+                <h3 class="text-2xl font-bold text-gray-600 mb-2">لم يتم العثور على نتائج</h3>
+                <p class="text-gray-500">حاول كلمات بحث مختلفة أو قم بإعادة تعيين المرشحات</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="employee.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9873fd25f7793574',t:'MTc1OTIzODEyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

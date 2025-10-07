@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="backend-url" content="https://your-backend.example.com">
+    <title>فيينا ستور - لوحة الإدارة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-blue-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <h1 class="text-2xl font-bold text-gray-600">⚙️ فيينا ستور - لوحة الإدارة</h1>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <p class="text-gray-600">مرحباً أيها المدير</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Panel -->
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-600">⚙️ لوحة الإدارة</h2>
+                <p class="text-gray-500 mt-2">إدارة المنتجات والطلبات</p>
+            </div>
+            
+            <!-- Add Product Form -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">➕ إضافة منتج جديد</h3>
+                <form id="addProductForm" class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">اسم المنتج *</label>
+                        <input type="text" id="productName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="أدخل اسم المنتج">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">السعر (دينار) *</label>
+                        <input type="number" id="productPrice" step="0.01" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="0.00">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">وصف المنتج</label>
+                        <textarea id="productDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="أدخل وصف المنتج (اختياري)"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">الصورة أو الفيديو</label>
+                        <input type="url" id="productMedia" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="https://example.com/image.jpg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">نوع الوسائط</label>
+                        <select id="productMediaType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="image">صورة</option>
+                            <option value="video">فيديو</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-medium">
+                            ➕ إضافة المنتج
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Products Management -->
+            <div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📦 إدارة المنتجات</h3>
+                <div id="adminProductsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Admin products will be displayed here -->
+                </div>
+                
+                <div id="noAdminProducts" class="text-center py-16">
+                    <div class="text-6xl mb-4">📦</div>
+                    <h3 class="text-2xl font-bold text-gray-600 mb-2">لا توجد منتجات</h3>
+                    <p class="text-gray-500">أضف منتجك الأول باستخدام النموذج أعلاه</p>
+                </div>
+            </div>
+
+            <!-- Orders Section -->
+            <div class="mt-12">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📋 الطلبات الواردة</h3>
+                <!-- Search / Filter for deliverables (split fields) -->
+                <div class="mb-6 grid sm:grid-cols-4 gap-4 items-center">
+                    <div>
+                        <input id="searchName" type="search" autocomplete="off" placeholder="ابحث بالاسم" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                    <div>
+                        <input id="searchPhone" type="search" autocomplete="off" placeholder="ابحث بالهاتف" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                    <div>
+                        <input id="searchDeliverableId" type="search" autocomplete="off" placeholder="ابحث برقم التوصيلة" class="w-full border rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </div>
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <label for="statusFilter" class="text-sm text-gray-600">حالة الطلب:</label>
+                        <select id="statusFilter" class="border rounded-lg px-3 py-2 bg-white shadow-sm">
+                            <option value="all">الكل</option>
+                            <option value="قيد التحضير">قيد التحضير</option>
+                            <option value="تم التوصيل">تم التوصيل</option>
+                            <option value="جديد">جديد</option>
+                        </select>
+                        <button id="clearFiltersBtn" class="mr-2 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 text-sm">مسح المرشحات</button>
+                    </div>
+                </div>
+
+                <div id="ordersGrid" class="space-y-6">
+                    <!-- Orders will be displayed here -->
+                </div>
+                
+                <div id="noOrders" class="text-center py-16">
+                    <div class="text-6xl mb-4">📋</div>
+                    <h3 class="text-2xl font-bold text-gray-600 mb-2">لا توجد طلبات حالياً</h3>
+                    <p class="text-gray-500">ستظهر الطلبات الجديدة هنا</p>
+                </div>
+                <div id="noMatches" class="text-center py-16 hidden">
+                    <div class="text-6xl mb-4">🔍</div>
+                    <h3 class="text-2xl font-bold text-gray-600 mb-2">لم يتم العثور على نتائج</h3>
+                    <p class="text-gray-500">حاول كلمات بحث مختلفة أو قم بإعادة تعيين المرشحات</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9873ed85b5bb3574',t:'MTc1OTIzNzQ4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

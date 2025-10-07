@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vvv}
+      MYSQL_USER: ${MYSQL_USER:-vvvuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-s3cret}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --innodb_buffer_pool_size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER:-vvvuser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-s3cret}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-vvv}
+      - REALTIME_TOKEN=${REALTIME_TOKEN}
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - app_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+  app_data:
