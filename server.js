@@ -5,92 +5,49 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const { v4: uuidv4 } = require('uuid');
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const REALTIME_TOKEN = process.env.REALTIME_TOKEN || '';
 
-// MySQL connection config (read from env vars or DATABASE_URL)
-const MYSQL_HOST = process.env.MYSQL_HOST || null;
-const MYSQL_USER = process.env.MYSQL_USER || null;
-const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || null;
-const MYSQL_DATABASE = process.env.MYSQL_DATABASE || null;
-const DATABASE_URL = process.env.DATABASE_URL || null; // optional
+// PostgreSQL connection config (read from env vars or DATABASE_URL)
+const POSTGRES_URL = process.env.DATABASE_URL || null;
+let pgPool = null;
+let usingPostgres = false;
 
-let dbPool = null;
-let usingMySQL = false;
-
-async function tryInitMySQL() {
+async function tryInitPostgres() {
   try {
-    if (!DATABASE_URL && (!MYSQL_HOST || !MYSQL_USER || !MYSQL_DATABASE)) {
-      console.log('MySQL not configured; will use file-based fallback');
+    if (!POSTGRES_URL) {
+      console.log('Postgres not configured; will use file-based fallback');
       return;
     }
-    // create pool
-    if (DATABASE_URL) {
-      dbPool = mysql.createPool(DATABASE_URL + (DATABASE_URL.includes('?') ? '&' : '?') + 'connectionLimit=10');
-    } else {
-      dbPool = mysql.createPool({ host: MYSQL_HOST, user: MYSQL_USER, password: MYSQL_PASSWORD, database: MYSQL_DATABASE, waitForConnections: true, connectionLimit: 10 });
-    }
-    // test connection
-    const conn = await dbPool.getConnection();
-    await conn.ping();
-    conn.release();
-    // ensure orders table exists
-    await ensureOrdersTable();
-    // if a local JSON orders file exists, migrate it into MySQL once
-    await migrateFileOrdersToMySQLIfPresent();
-    usingMySQL = true;
-    console.log('Connected to MySQL, using SQL persistence');
+    pgPool = new Pool({ connectionString: POSTGRES_URL });
+    const client = await pgPool.connect();
+    await client.query('SELECT 1'); // Test connection
+    client.release();
+    await ensureOrdersTablePostgres();
+    usingPostgres = true;
+    console.log('Connected to PostgreSQL, using SQL persistence');
   } catch (err) {
-    console.warn('MySQL init failed, falling back to file persistence:', err.message || err);
-    dbPool = null;
-    usingMySQL = false;
+    console.warn('Postgres init failed, falling back to file persistence:', err.message || err);
+    pgPool = null;
+    usingPostgres = false;
   }
 }
 
-async function ensureOrdersTable() {
-  if (!dbPool) return;
+async function ensureOrdersTablePostgres() {
+  if (!pgPool) return;
   const create = `
     CREATE TABLE IF NOT EXISTS orders (
       id VARCHAR(64) PRIMARY KEY,
       data JSON NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    );
   `;
-  await dbPool.query(create);
-}
-
-// Migrate any existing JSON orders file into MySQL (one-time)
-async function migrateFileOrdersToMySQLIfPresent() {
-  try {
-    if (!fs.existsSync(ORDERS_FILE)) return;
-    const raw = fs.readFileSync(ORDERS_FILE, 'utf8');
-    const fileOrders = JSON.parse(raw || '[]');
-    if (!Array.isArray(fileOrders) || fileOrders.length === 0) return;
-    console.log(`Migrating ${fileOrders.length} orders from JSON file into MySQL`);
-    const conn = await dbPool.getConnection();
-    try {
-      await conn.beginTransaction();
-      for (const o of fileOrders) {
-        const id = String(o.id || uuidv4());
-        await conn.query('INSERT INTO orders (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data), updated_at = CURRENT_TIMESTAMP', [id, JSON.stringify(o)]);
-      }
-      await conn.commit();
-    } catch (err) {
-      await conn.rollback();
-      console.error('Migration failed:', err);
-    } finally {
-      conn.release();
-    }
-    // backup old file
-    try { fs.renameSync(ORDERS_FILE, ORDERS_FILE + '.migrated.' + Date.now()); } catch (e) { }
-  } catch (e) {
-    console.error('Migration helper error:', e);
-  }
+  await pgPool.query(create);
 }
 
 // health endpoint will be added after app is initialized
@@ -100,9 +57,9 @@ function ensureDataDir() {
 }
 
 async function loadOrders() {
-  if (usingMySQL && dbPool) {
-    const [rows] = await dbPool.query('SELECT id, data FROM orders ORDER BY created_at ASC');
-    return rows.map(r => JSON.parse(r.data));
+  if (usingPostgres && pgPool) {
+    const res = await pgPool.query('SELECT id, data FROM orders ORDER BY created_at ASC');
+    return res.rows.map(r => r.data);
   }
   try {
     ensureDataDir();
@@ -119,26 +76,21 @@ async function loadOrders() {
 }
 
 async function saveOrders(orders) {
-  if (usingMySQL && dbPool) {
-    // replace all orders in SQL by upserting each row (simple approach)
-    const conn = await dbPool.getConnection();
+  if (usingPostgres && pgPool) {
+    const client = await pgPool.connect();
     try {
-      await conn.beginTransaction();
+      await client.query('BEGIN');
+      await client.query('DELETE FROM orders');
       for (const o of orders) {
-        const id = String(o.id);
-        await conn.query('INSERT INTO orders (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data), updated_at = CURRENT_TIMESTAMP', [id, JSON.stringify(o)]);
+        const id = String(o.id || uuidv4());
+        await client.query('INSERT INTO orders (id, data) VALUES ($1, $2)', [id, o]);
       }
-      // delete any rows not present in the orders array
-      const ids = orders.map(o => String(o.id));
-      if (ids.length > 0) {
-        await conn.query(`DELETE FROM orders WHERE id NOT IN (${ids.map(() => '?').join(',')})`, ids);
-      }
-      await conn.commit();
+      await client.query('COMMIT');
     } catch (err) {
-      await conn.rollback();
-      console.error('Failed to save orders to MySQL:', err);
+      await client.query('ROLLBACK');
+      console.error('Failed to save orders:', err);
     } finally {
-      conn.release();
+      client.release();
     }
     return;
   }
@@ -176,7 +128,7 @@ app.use((req, res, next) => {
 
 // health endpoint
 app.get('/health', (req, res) => {
-  res.json({ ok: true, mysql: usingMySQL });
+  res.json({ ok: true, mysql: usingPostgres });
 });
 
 // REST API
@@ -315,7 +267,7 @@ function broadcast(obj, except) {
 }
 
 (async () => {
-  await tryInitMySQL();
+  await tryInitPostgres();
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
     if (REALTIME_TOKEN) console.log('Realtime token auth is ENABLED');
