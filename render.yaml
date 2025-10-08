@@ -9,7 +9,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-            - key: REALTIME_TOKEN
+      - key: REALTIME_TOKEN
         generateValue: true
       - key: MYSQL_HOST
         value: vvv-mysql
@@ -41,4 +41,3 @@ services:
         value: vvvuser
       - key: MYSQL_PASSWORD
         value: s3cret
-    
