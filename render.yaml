@@ -9,9 +9,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
-      - key: REALTIME_TOKEN
+            - key: REALTIME_TOKEN
         generateValue: true
       - key: MYSQL_HOST
         value: vvv-mysql
@@ -24,7 +22,7 @@ services:
       - key: MYSQL_PASSWORD
         value: s3cret
 
-  - type: worker
+  - type: private_service
     name: vvv-mysql
     env: docker
     plan: starter
