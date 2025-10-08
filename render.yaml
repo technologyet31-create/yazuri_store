@@ -24,7 +24,7 @@ services:
       - key: MYSQL_PASSWORD
         value: s3cret
 
-  - type: private_service
+  - type: worker
     name: vvv-mysql
     env: docker
     plan: starter
@@ -43,5 +43,4 @@ services:
         value: vvvuser
       - key: MYSQL_PASSWORD
         value: s3cret
-    ports:
-      - 3306
+    
