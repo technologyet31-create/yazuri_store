@@ -225,6 +225,8 @@ async function fetchOrdersFromServer() {
 // Helper to support remote backend when frontend is hosted elsewhere (e.g. Netlify)
 function getBackendBase() {
     const explicit = (window.BACKEND_URL || document.querySelector('meta[name="backend-url"]')?.getAttribute('content') || new URL(location.href).searchParams.get('backend') || '').trim();
+    // Ignore the placeholder domain so same-origin is used on Render
+    if (explicit && /(^https?:\/\/)?your-backend\.example\.com\/?$/i.test(explicit)) return '';
     return explicit ? explicit.replace(/\/$/, '') : '';
 }
 
@@ -268,10 +270,23 @@ if ('BroadcastChannel' in window) {
 let realtimeSocket;
 function connectRealtime() {
     try {
-    const token = window.REALTIME_TOKEN || new URL(location.href).searchParams.get('token');
-    let url = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + (location.hostname || 'localhost') + ':3000';
-    if (token) url += '?token=' + encodeURIComponent(token);
-        realtimeSocket = new WebSocket(url);
+        const token = window.REALTIME_TOKEN || new URL(location.href).searchParams.get('token');
+        // Build WS URL for same-origin (works on Render) or from BACKEND_URL if provided
+        let wsUrl = '';
+        try {
+            const base = getBackendBase();
+            if (base) {
+                const u = new URL(base);
+                const wsProto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+                wsUrl = wsProto + '//' + u.host + '/';
+            } else {
+                wsUrl = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/';
+            }
+        } catch (e) {
+            wsUrl = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/';
+        }
+        if (token) wsUrl += (wsUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+        realtimeSocket = new WebSocket(wsUrl);
         realtimeSocket.addEventListener('open', () => console.log('realtime connected'));
         realtimeSocket.addEventListener('message', (ev) => {
             try {
