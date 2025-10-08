@@ -222,6 +222,34 @@ async function fetchOrdersFromServer() {
     }
 }
 
+// Replace localStorage with API calls
+async function fetchProductsFromServer() {
+  try {
+    const response = await fetch(apiUrl('/api/products'));
+    if (!response.ok) throw new Error('Failed to fetch products');
+    products = await response.json();
+    renderEmployeeProducts();
+  } catch (err) {
+    console.error('Error fetching products:', err);
+  }
+}
+
+async function addProductToServer(product) {
+  try {
+    const response = await fetch(apiUrl('/api/products'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    });
+    if (!response.ok) throw new Error('Failed to add product');
+    const newProduct = await response.json();
+    products.push(newProduct);
+    renderEmployeeProducts();
+  } catch (err) {
+    console.error('Error adding product:', err);
+  }
+}
+
 // Helper to support remote backend when frontend is hosted elsewhere (e.g. Netlify)
 function getBackendBase() {
     const explicit = (window.BACKEND_URL || document.querySelector('meta[name="backend-url"]')?.getAttribute('content') || new URL(location.href).searchParams.get('backend') || '').trim();
@@ -303,3 +331,4 @@ function connectRealtime() {
 connectRealtime();
 // prefer server as canonical store on load
 fetchOrdersFromServer();
+fetchProductsFromServer();

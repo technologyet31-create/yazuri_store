@@ -312,6 +312,34 @@ function renderOrders() {
         });
 }
 
+// Replace localStorage with API calls
+async function fetchProductsFromServer() {
+  try {
+    const response = await fetch(apiUrl('/api/products'));
+    if (!response.ok) throw new Error('Failed to fetch products');
+    products = await response.json();
+    renderAdminProducts();
+  } catch (err) {
+    console.error('Error fetching products:', err);
+  }
+}
+
+async function addProductToServer(product) {
+  try {
+    const response = await fetch(apiUrl('/api/products'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    });
+    if (!response.ok) throw new Error('Failed to add product');
+    const newProduct = await response.json();
+    products.push(newProduct);
+    renderAdminProducts();
+  } catch (err) {
+    console.error('Error adding product:', err);
+  }
+}
+
 // Add product form handler
 document.getElementById('addProductForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -332,11 +360,8 @@ document.getElementById('addProductForm').addEventListener('submit', (e) => {
         dateAdded: new Date().toLocaleDateString('ar-SA')
     };
     
-    products.push(newProduct);
-    localStorage.setItem('products', JSON.stringify(products));
-    
+    addProductToServer(newProduct);
     document.getElementById('addProductForm').reset();
-    renderAdminProducts();
     alert('تم إضافة المنتج بنجاح!');
 });
 
@@ -419,7 +444,6 @@ function deleteOrder(orderId) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    renderAdminProducts();
     // wire up live filtering
     // Debounced input handlers (200ms)
     const debouncedRender = debounce(renderOrders, 200);
@@ -444,4 +468,5 @@ document.addEventListener('DOMContentLoaded', function() {
     connectRealtime();
     // prefer server as canonical store on load
     fetchOrdersFromServer();
+    fetchProductsFromServer();
 });
