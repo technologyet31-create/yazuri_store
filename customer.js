@@ -1,5 +1,4 @@
 // Data storage
-let products = JSON.parse(localStorage.getItem('products')) || [];
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let orders = JSON.parse(localStorage.getItem('orders')) || [];
 
@@ -301,6 +300,34 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     }
 });
 
+// Replace localStorage with API calls
+async function fetchProductsFromServer() {
+  try {
+    const response = await fetch(apiUrl('/api/products'));
+    if (!response.ok) throw new Error('Failed to fetch products');
+    products = await response.json();
+    renderCustomerProducts();
+  } catch (err) {
+    console.error('Error fetching products:', err);
+  }
+}
+
+async function addProductToServer(product) {
+  try {
+    const response = await fetch(apiUrl('/api/products'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    });
+    if (!response.ok) throw new Error('Failed to add product');
+    const newProduct = await response.json();
+    products.push(newProduct);
+    renderCustomerProducts();
+  } catch (err) {
+    console.error('Error adding product:', err);
+  }
+}
+
 // Auto refresh products every 30 seconds
 setInterval(() => {
     products = JSON.parse(localStorage.getItem('products')) || [];
@@ -327,7 +354,7 @@ async function fetchOrdersFromServer() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    renderCustomerProducts();
+    fetchProductsFromServer();
     updateCartCount();
 });
 
