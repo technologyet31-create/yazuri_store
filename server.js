@@ -44,7 +44,7 @@ async function ensureOrdersTablePostgres() {
       id VARCHAR(64) PRIMARY KEY,
       data JSON NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
   await pgPool.query(create);
