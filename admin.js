@@ -383,9 +383,17 @@ function editProduct(productId) {
 // Delete product
 function deleteProduct(productId) {
     if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-        products = products.filter(p => p.id !== productId);
-        localStorage.setItem('products', JSON.stringify(products));
-        renderAdminProducts();
+        (async () => {
+            try {
+                const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete product');
+                products = products.filter(p => p.id !== productId);
+                renderAdminProducts();
+            } catch (err) {
+                console.error('Error deleting product:', err);
+                alert('Failed to delete product. Please try again.');
+            }
+        })();
     }
 }
 

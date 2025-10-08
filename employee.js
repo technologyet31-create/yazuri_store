@@ -181,18 +181,15 @@ function updateOrderStatus(orderId, newStatus) {
 function deleteOrder(orderId) {
     if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
     (async () => {
-        const token = window.REALTIME_TOKEN || new URL(location.href).searchParams.get('token');
-        const url = '/api/orders/' + encodeURIComponent(orderId) + (token ? ('?token=' + encodeURIComponent(token)) : '');
+        const url = `/api/orders/${encodeURIComponent(orderId)}`;
         try {
-            const res = await fetch(url, { method: 'DELETE', headers: token ? { 'x-realtime-token': token } : {} });
+            const res = await fetch(url, { method: 'DELETE' });
             if (!res.ok) throw new Error('bad status ' + res.status);
             orders = orders.filter(o => String(o.id) !== String(orderId));
             try { localStorage.setItem('orders', JSON.stringify(orders)); } catch (e) {}
-            renderOrders();
         } catch (err) {
-            orders = orders.filter(o => o.id !== orderId);
-            try { localStorage.setItem('orders', JSON.stringify(orders)); } catch (e) {}
-            renderOrders();
+            console.error('Error deleting order:', err);
+            alert('Failed to delete order. Please try again.');
         }
     })();
 }
