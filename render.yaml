@@ -1,6 +1,5 @@
 databases:
   - name: yazuri-store-db
-    databaseType: mysql
     plan: free
 services:
   - type: web
