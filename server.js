@@ -28,6 +28,7 @@ async function tryInitPostgres() {
     await client.query('SELECT 1'); // Test connection
     client.release();
     await ensureOrdersTablePostgres();
+    await ensureProductsTablePostgres();
     usingPostgres = true;
     console.log('Connected to PostgreSQL, using SQL persistence');
   } catch (err) {
@@ -49,6 +50,24 @@ async function ensureOrdersTablePostgres() {
   `;
   await pgPool.query(create);
 }
+
+// Add products table and endpoints
+async function ensureProductsTablePostgres() {
+  if (!pgPool) return;
+  const create = `
+    CREATE TABLE IF NOT EXISTS products (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      price NUMERIC(10, 2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await pgPool.query(create);
+}
+
+// Ensure products table exists
+ensureProductsTablePostgres();
 
 // health endpoint will be added after app is initialized
 
@@ -198,6 +217,34 @@ app.delete('/api/orders/:id', async (req, res) => {
   } catch (err) {
     console.error('delete order failed', err);
     res.status(500).json({ error: 'failed to delete order' });
+  }
+});
+
+// Add API endpoints for products
+app.get('/api/products', async (req, res) => {
+  try {
+    const result = await pgPool.query('SELECT * FROM products ORDER BY created_at ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Failed to fetch products:', err);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+app.post('/api/products', async (req, res) => {
+  try {
+    const { name, description, price } = req.body;
+    if (!name || !price) {
+      return res.status(400).json({ error: 'Name and price are required' });
+    }
+    const result = await pgPool.query(
+      'INSERT INTO products (name, description, price) VALUES ($1, $2, $3) RETURNING *',
+      [name, description, price]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Failed to add product:', err);
+    res.status(500).json({ error: 'Failed to add product' });
   }
 });
 
